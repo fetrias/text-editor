@@ -1,23 +1,32 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
-project(text_editor VERSION 0.1.0 LANGUAGES CXX)
+project(texteditor LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTORCC ON)
 
-add_executable(text_editor)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Core5Compat)
 
-target_sources(text_editor
-    PRIVATE
-        src/main.cpp
-        src/document.cpp
-        src/syntax_highlighter.cpp
-        src/editor.cpp
-        src/pomodoro_timer.cpp
+add_executable(texteditor WIN32
+    src/main.cpp
+    src/mainwindow.cpp
+    src/codeeditor.cpp
+    src/syntaxhighlighter.cpp
+    src/pomodorotimer.cpp
+    include/mainwindow.h
+    include/codeeditor.h
+    include/syntaxhighlighter.h
+    include/pomodorotimer.h
 )
 
-target_include_directories(text_editor
+target_include_directories(texteditor PRIVATE include)
+
+target_link_libraries(texteditor
     PRIVATE
-        include
+        Qt6::Core
+        Qt6::Widgets
+        Qt6::Core5Compat
 )
