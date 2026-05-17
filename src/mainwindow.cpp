@@ -16,6 +16,7 @@
 #include <QApplication>
 #include <QSettings>
 #include <QLineEdit>
+#include <QFileInfo>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     m_editor = new CodeEditor(this);
@@ -45,6 +46,33 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
             "QToolBar{background:#333333;border:none;}"
         );
     }
+}
+
+QString MainWindow::getOpenFileName() {
+    return QFileDialog::getOpenFileName(this, "Открыть файл", {},
+        "Все файлы (*);;C++ (*.cpp *.h *.hpp);;Python (*.py);;JavaScript (*.js);;HTML (*.html *.htm);;CSS (*.css);;SQL (*.sql)");
+}
+
+QString MainWindow::getSaveFileName() {
+    return QFileDialog::getSaveFileName(this, "Сохранить как", {}, "Все файлы (*)");
+}
+
+QString MainWindow::getFindText(bool *ok) {
+    return QInputDialog::getText(this, "Найти", "Текст:", QLineEdit::Normal, {}, ok);
+}
+
+QFont MainWindow::getFont(bool *ok) {
+    return QFontDialog::getFont(ok, m_editor->font(), this);
+}
+
+QMessageBox::StandardButton MainWindow::askSaveQuestion() {
+    return QMessageBox::question(this, "Сохранить изменения?",
+        "Есть несохранённые изменения. Сохранить?",
+        QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+}
+
+void MainWindow::showInfoMessage(const QString &title, const QString &text) {
+    QMessageBox::information(this, title, text);
 }
 
 void MainWindow::setupMenus() {
@@ -118,9 +146,7 @@ void MainWindow::updateStatus() {
 
 bool MainWindow::maybeSave() {
     if (!m_editor->isModified()) return true;
-    auto btn = QMessageBox::question(this, "Сохранить изменения?",
-        "Есть несохранённые изменения. Сохранить?",
-        QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+    auto btn = askSaveQuestion();
     if (btn == QMessageBox::Save)    { saveFile(); return true; }
     if (btn == QMessageBox::Discard) return true;
     return false;
@@ -129,15 +155,14 @@ bool MainWindow::maybeSave() {
 void MainWindow::newFile() {
     if (!maybeSave()) return;
     m_editor->clear();
-    m_editor->setModified(false);
+    m_editor->clearCurrentFile();
     m_statusLang->setText("Язык: (нет)");
     updateTitle();
 }
 
 void MainWindow::openFile() {
     if (!maybeSave()) return;
-    QString path = QFileDialog::getOpenFileName(this, "Открыть файл", {},
-        "Все файлы (*);;C++ (*.cpp *.h *.hpp);;Python (*.py);;JavaScript (*.js);;HTML (*.html *.htm);;CSS (*.css);;SQL (*.sql)");
+    QString path = getOpenFileName();
     if (path.isEmpty()) return;
     m_editor->openFile(path);
     m_statusLang->setText("Язык: " + QFileInfo(path).suffix().toUpper());
@@ -151,7 +176,7 @@ void MainWindow::saveFile() {
 }
 
 void MainWindow::saveFileAs() {
-    QString path = QFileDialog::getSaveFileName(this, "Сохранить как", {}, "Все файлы (*)");
+    QString path = getSaveFileName();
     if (path.isEmpty()) return;
     m_editor->saveFile(path);
     updateTitle();
@@ -159,7 +184,7 @@ void MainWindow::saveFileAs() {
 
 void MainWindow::find() {
     bool ok;
-    QString text = QInputDialog::getText(this, "Найти", "Текст:", QLineEdit::Normal, {}, &ok);
+    QString text = getFindText(&ok);
     if (!ok || text.isEmpty()) return;
 
     bool found = m_editor->find(text);
@@ -169,7 +194,7 @@ void MainWindow::find() {
         c.movePosition(QTextCursor::Start);
         m_editor->setTextCursor(c);
         found = m_editor->find(text);
-        if (!found) QMessageBox::information(this, "Найти", "Текст не найден.");
+        if (!found) showInfoMessage("Найти", "Текст не найден.");
     }
 }
 
@@ -180,7 +205,7 @@ void MainWindow::setLanguage(const QString &lang) {
 
 void MainWindow::changeFont() {
     bool ok;
-    QFont f = QFontDialog::getFont(&ok, m_editor->font(), this);
+    QFont f = getFont(&ok);
     if (!ok) return;
     m_editor->setFont(f);
     QSettings s("RTU_MIREA", "TextEditor");
@@ -215,18 +240,22 @@ void MainWindow::onWorkFinished() {
     m_inBreak = true;
     m_pomodoroAction->setText("Отдохнуть");
     m_statusTimer->setText("Время отдохнуть!");
-    QSystemTrayIcon tray;
-    tray.show();
-    tray.showMessage("Pomodoro", "Время отдохнуть!", QSystemTrayIcon::Information, 5000);
+    if (QSystemTrayIcon::isSystemTrayAvailable()) {
+        QSystemTrayIcon tray;
+        tray.show();
+        tray.showMessage("Pomodoro", "Время отдохнуть!", QSystemTrayIcon::Information, 5000);
+    }
 }
 
 void MainWindow::onBreakFinished() {
     m_inBreak = false;
     m_pomodoroAction->setText("Начать работу");
     m_statusTimer->hide();
-    QSystemTrayIcon tray;
-    tray.show();
-    tray.showMessage("Pomodoro", "Перерыв окончен! Приступайте к работе.", QSystemTrayIcon::Information, 5000);
+    if (QSystemTrayIcon::isSystemTrayAvailable()) {
+        QSystemTrayIcon tray;
+        tray.show();
+        tray.showMessage("Pomodoro", "Перерыв окончен! Приступайте к работе.", QSystemTrayIcon::Information, 5000);
+    }
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {

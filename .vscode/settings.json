@@ -1,0 +1,6 @@
+{
+  "cmake.useCMakePresets": "always",
+  "cmake.configurePreset": "mingw-release",
+  "cmake.buildPreset": "mingw-release",
+  "cmake.testPreset": "mingw-release"
+}

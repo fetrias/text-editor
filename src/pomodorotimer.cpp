@@ -23,14 +23,14 @@ PomodoroTimer::PomodoroTimer(QObject *parent) : QObject(parent) {
 
 void PomodoroTimer::startWork() {
     m_workInterval = true;
-    m_remaining = 25 * 60;
+    m_remaining = m_workSeconds;
     m_running = true;
     m_timer.start(1000);
 }
 
 void PomodoroTimer::startBreak() {
     m_workInterval = false;
-    m_remaining = 5 * 60;
+    m_remaining = m_breakSeconds;
     m_running = true;
     m_timer.start(1000);
 }
@@ -39,4 +39,9 @@ void PomodoroTimer::stop() {
     m_timer.stop();
     m_running = false;
     m_remaining = 0;
+}
+
+void PomodoroTimer::setDurations(int workSeconds, int breakSeconds) {
+    if (workSeconds > 0) m_workSeconds = workSeconds;
+    if (breakSeconds > 0) m_breakSeconds = breakSeconds;
 }

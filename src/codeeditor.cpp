@@ -10,6 +10,7 @@
 #include <QTextCursor>
 #include <QTextBlock>
 #include <QScrollBar>
+#include <QTimer>
 
 // Виджет для отрисовки номеров строк
 class LineNumberArea : public QWidget {
@@ -31,7 +32,10 @@ CodeEditor::CodeEditor(QWidget *parent) : QPlainTextEdit(parent) {
     connect(this, &QPlainTextEdit::blockCountChanged,   this, &CodeEditor::updateLineNumberAreaWidth);
     connect(this, &QPlainTextEdit::updateRequest,       this, &CodeEditor::updateLineNumberArea);
     connect(this, &QPlainTextEdit::cursorPositionChanged, this, &CodeEditor::onCursorPositionChanged);
-    connect(document(), &QTextDocument::contentsChanged, this, [this]() { m_modified = true; });
+    connect(document(), &QTextDocument::contentsChanged, this, [this]() {
+        if (m_ignoreChanges) return;
+        m_modified = true;
+    });
 
     updateLineNumberAreaWidth();
     highlightCurrentLine();
@@ -158,10 +162,15 @@ void CodeEditor::openFile(const QString &path) {
     if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) return;
     QTextStream in(&f);
     in.setEncoding(QStringConverter::Utf8);
+    m_ignoreChanges = true;
     setPlainText(in.readAll());
     m_filePath = path;
     m_modified = false;
     setLanguageByExtension(path);
+    QTimer::singleShot(0, this, [this]() {
+        m_modified = false;
+        m_ignoreChanges = false;
+    });
 }
 
 bool CodeEditor::saveFile(const QString &path) {
@@ -193,6 +202,11 @@ void CodeEditor::setLanguageByExtension(const QString &path) {
 
 void CodeEditor::setLanguage(const QString &lang) {
     m_highlighter->setLanguage(lang);
+}
+
+void CodeEditor::clearCurrentFile() {
+    m_filePath.clear();
+    m_modified = false;
 }
 
 bool CodeEditor::isModified() const { return m_modified; }

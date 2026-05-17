@@ -8,10 +8,15 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Core5Compat)
+if (WIN32 AND NOT DEFINED CMAKE_PREFIX_PATH)
+    if (EXISTS "C:/Qt/6.11.1/mingw_64/lib/cmake/Qt6")
+        list(PREPEND CMAKE_PREFIX_PATH "C:/Qt/6.11.1/mingw_64")
+    endif()
+endif()
 
-add_executable(texteditor WIN32
-    src/main.cpp
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Core5Compat Test)
+
+set(TEXTEDITOR_SOURCES
     src/mainwindow.cpp
     src/codeeditor.cpp
     src/syntaxhighlighter.cpp
@@ -22,11 +27,27 @@ add_executable(texteditor WIN32
     include/pomodorotimer.h
 )
 
-target_include_directories(texteditor PRIVATE include)
-
-target_link_libraries(texteditor
-    PRIVATE
+add_library(texteditor_lib ${TEXTEDITOR_SOURCES})
+target_include_directories(texteditor_lib PUBLIC include)
+target_link_libraries(texteditor_lib
+    PUBLIC
         Qt6::Core
         Qt6::Widgets
         Qt6::Core5Compat
 )
+
+add_executable(texteditor WIN32
+    src/main.cpp
+)
+target_link_libraries(texteditor PRIVATE texteditor_lib)
+
+include(FetchContent)
+FetchContent_Declare(
+    Catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+    GIT_TAG v3.5.4
+)
+FetchContent_MakeAvailable(Catch2)
+
+enable_testing()
+add_subdirectory(tests)

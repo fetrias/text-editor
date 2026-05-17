@@ -11,6 +11,7 @@ public:
     void startBreak();
     void stop();
     bool isRunning() const { return m_running; }
+    void setDurations(int workSeconds, int breakSeconds);
 
 signals:
     void tick(int remainingSeconds);
@@ -23,6 +24,8 @@ private:
 
     QTimer m_timer;
     int m_remaining = 0;
+    int m_workSeconds = 25 * 60;
+    int m_breakSeconds = 5 * 60;
     bool m_running = false;
     bool m_workInterval = true;
 };

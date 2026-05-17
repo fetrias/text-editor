@@ -17,6 +17,7 @@ public:
     bool saveFile(const QString &path);
     void setLanguageByExtension(const QString &path);
     void setLanguage(const QString &lang);
+    void clearCurrentFile();
 
     bool isModified() const;
     void setModified(bool v);
@@ -36,6 +37,7 @@ private:
     SyntaxHighlighter *m_highlighter;
     QString m_filePath;
     bool m_modified = false;
+    bool m_ignoreChanges = false;
 
     void highlightCurrentLine();
     void matchBrackets();

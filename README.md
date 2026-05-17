@@ -23,4 +23,13 @@ $windeployqt = "C:\Qt\6.11.1\mingw_64\bin\windeployqt.exe"
 ```
 
 ## Команда для запуска проекта
+```
 start .\build-cmake\texteditor.exe
+```
+
+## Команда для запуска тестов
+```
+cd build
+cmake --build . --config Release
+ctest
+```
